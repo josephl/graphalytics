@@ -1,0 +1,5 @@
+*.pyc
+graphalytics/client_secrets.json
+graphalytics/analytics.dat
+graphalytics/DEPENDENCIES
+graphalytics/httplib2/cacerts.txt
