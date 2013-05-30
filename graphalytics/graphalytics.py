@@ -14,7 +14,7 @@ import gflags
 FLAGS = gflags.FLAGS
 
 def request(**kwargs):
-    service = graphalytics_auth.initialize_service()
+    service = graphalytics_auth.initialize_service(*kwargs.get('config'))
 
     try:
         accountId = get_account_id(service)
@@ -138,6 +138,7 @@ if __name__ == '__main__':
                 'end_date': now.strftime('%s'),
                 'metrics': ['ga:visits'],
                 'dimensions': ['ga:date', 'ga:hour']
-                }
+                },
+            'config': ['analytics.dat', 'client_secrets.json']
             }
     request(**params)
