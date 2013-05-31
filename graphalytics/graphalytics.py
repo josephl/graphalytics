@@ -31,7 +31,7 @@ def request(**kwargs):
                     kwargs.get('query').update({'profileId': profileId})
                     results = get_results(service,
                                           **request_params(**kwargs.get('query')))
-                    pprint.pprint(results_to_graphite(results))
+                    #pprint.pprint(results_to_graphite(results))
     except TypeError, error:
         print 'There was an error in constructing your query: %s' % error
     except HttpError, error:
@@ -40,6 +40,7 @@ def request(**kwargs):
     except AccessTokenRefreshError:
         print ('The credentials have been revoked or expired, '
                'please re-run the application to reauth')
+    return results_to_graphite(results)
 
 def get_account_id(service, **kwargs):
     """If no kwargs specified or only one account item exists, return first
@@ -85,7 +86,8 @@ def request_params(**kwargs):
             'start_date': sec_to_date(kwargs.get('start_date')),
             'end_date': sec_to_date(kwargs.get('end_date')),
             'metrics': ','.join(kwargs.get('metrics')),
-            'dimensions': ','.join(kwargs.get('dimensions'))
+            'dimensions': ','.join(kwargs.get('dimensions')),
+            'max_results': '10000'
             }
 
 def sec_to_date(seconds):
@@ -101,17 +103,43 @@ def results_to_graphite(results):
     dimensions = query.get('dimensions').split(',')
     rows = results.get('rows')
     dateIndex = get_date_index(dimensions, rows)
+    step = dateIndex[1] - dateIndex[0]
+    start = dateIndex[0]
+    end = dateIndex[-1] + step
     for metric in query.get('metrics'):
         for i in xrange(len(headers)):
             if metric == headers[i].get('name'):
                 rowIndex = i
                 break
         formattedData.append({
-                'target': metric,
-                'datapoints': zip(dateIndex,
-                                  map(lambda x: float(x[rowIndex]), rows))
+                'name': metric,
+                'values': map(lambda x: float(x[rowIndex]), rows),
+                'step': step,
+                'start': start,
+                'end': end
                 })
     return formattedData
+
+#def results_to_graphite(results):
+#    """Convert rows from Core Reporting API to a format consistent with
+#    Graphite JSON objects."""
+#    formattedData = []
+#    query = results.get('query')
+#    headers = results.get('columnHeaders')
+#    dimensions = query.get('dimensions').split(',')
+#    rows = results.get('rows')
+#    dateIndex = get_date_index(dimensions, rows)
+#    for metric in query.get('metrics'):
+#        for i in xrange(len(headers)):
+#            if metric == headers[i].get('name'):
+#                rowIndex = i
+#                break
+#        formattedData.append({
+#                'target': metric,
+#                'datapoints': zip(dateIndex,
+#                                  map(lambda x: float(x[rowIndex]), rows))
+#                })
+#    return formattedData
 
 
 def get_date_index(dimensions, rows):
